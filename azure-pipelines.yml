@@ -1,0 +1,45 @@
+# Azure Pipeline.
+
+variables:
+- group: cde_terraform
+
+name: $(Date:yyyyMMdd).$(Rev:.r)
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - dev
+jobs:
+- job: Plan
+  pool:
+    vmImage: 'ubuntu-16.04' # Other options: 'macOS-10.13', 'vs2017-win2016'
+  steps:
+  - task: DownloadSecureFile@1
+    inputs:
+      secureFile: terraform.tfvars
+  - script: terraform fmt -check=true
+    displayName: Check terraform is formatted correctly
+  - bash: cp $(Agent.TempDirectory)/terraform.tfvars .
+    displayName: place variables 
+  - task: AzureCLI@1
+    displayName: Init
+    inputs:
+      azureSubscription: $(azureSub)
+      scriptLocation: 'scriptPath' # Options: inlineScript, scriptPath
+      scriptPath: ./init.sh
+      arguments: -a $(cluster_name)$(env) -e $(env) -g $(cluster_name)$(env)
+  - task: AzureCLI@1
+    displayName: Plan 
+    inputs:
+      azureSubscription:  $(azureSub)
+      scriptLocation: 'scriptPath' # Options: inlineScript, scriptPath
+      scriptPath: ./plan.sh
+      arguments: -a $(cluster_name)$(env) -e $(env) -g $(cluster_name)$(env)
+  - script: rm -rf .terraform && rm -rf .git && cp -r . $(Build.StagingDirectory)
+    displayName: clean-up && copy src files to staging dir
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: $(env)-drop
+      publishLocation: 'Container' # Options: container, filePath
