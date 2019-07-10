@@ -4,22 +4,17 @@ set -e
 # Script Parameters                                           #
 ###############################################################
 
-while getopts a:e:g: option
+while getopts c:e: option
 do
     case "${option}"
     in
-    a) STORAGE_ACCOUNT_NAME=${OPTARG};;
+    c) CLUSTER_NAME=${OPTARG};;
     e) ENVIRONMENT=${OPTARG};;
-    g) RESOURCE_GROUP_NAME=${OPTARG};;
     esac
 done
 
-if [ -z "$RESOURCE_GROUP_NAME" ]; then
-    echo "-g is a required argument - Resource Group Name for storage account"
-    exit 1
-fi
-if [ -z "$STORAGE_ACCOUNT_NAME" ]; then
-    echo "-a is a required argument - Storage account name"
+if [ -z "$CLUSTER_NAME" ]; then
+    echo "-c is a required argument - Resource Group Name for storage account"
     exit 1
 fi
 if [ -z "$ENVIRONMENT" ]; then
@@ -31,6 +26,9 @@ fi
 ###############################################################
 # Script Begins                                               #
 ###############################################################
+
+RESOURCE_GROUP_NAME=${CLUSTER_NAME}${ENVIRONMENT}
+STORAGE_ACCOUNT_NAME=${CLUSTER_NAME}${ENVIRONMENT}
 
 set +e # errors don't matter for a bit
 
